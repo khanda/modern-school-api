@@ -5,9 +5,14 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var bodyParser = require('body-parser');
 var favicon = require('serve-favicon');
+const passport = require('passport');
+
+require('./config/config');
+require('./global_functions');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+const v1 = require('./routes/v1');
 
 var app = express();
 
@@ -20,9 +25,12 @@ app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+//Passport
+app.use(passport.initialize());
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/v1', v1);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -38,6 +46,34 @@ app.use(function (err, req, res, next) {
     // render the error page
     res.status(err.status || 500);
     res.render('error');
+});
+//-----------------------------------------------------------------------------------
+// DATABASE
+const models = require("./models");
+models.sequelize.authenticate().then(() => {
+    console.log('Connected to SQL database');
+}).catch(err => {
+    console.error('Unable to connect to SQL database:', err);
+});
+
+if (CONFIG.app === 'development') {
+    // models.sequelize.sync();//creates tables from models
+    models.sequelize.sync({force: true});//good for testing
+}
+//-----------------------------------------------------------------------------------
+// CORS
+app.use(function (req, res, next) {
+    // Website you wish to allow to connect
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    // Request methods you wish to allow
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    // Request headers you wish to allow
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, content-type, Authorization, Content-Type');
+    // Set to true if you need the website to include cookies in the requests sent
+    // to the API (e.g. in case you use sessions)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    // Pass to next layer of middleware
+    next();
 });
 
 module.exports = app;
