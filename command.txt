@@ -1,0 +1,2 @@
+DEBUG=modern-school-api:* npm start
+DEBUG=modern-school-api:* npm run devstart
